@@ -2,7 +2,7 @@ import json
 import os
 from prompt_toolkit import prompt
 from prompt_toolkit.completion import WordCompleter
-
+from abc import ABC, abstractmethod
 
 class Note: #Клас Note представляє окрему нотатку з такими атрибутами:
             #title: Рядок, що представляє заголовок нотатки.
@@ -124,6 +124,58 @@ class Notebook: # Клас Notebook представляє собою колек
             self.notes = [Note(note['title'], note['content'], note['tags']) for note in data]
 
 
+class UserInterface(ABC):
+
+    @abstractmethod
+    def display_menu(self):
+        pass
+
+    @abstractmethod
+    def get_user_input(self):
+        pass
+
+    @abstractmethod
+    def display_message(self, message):
+        pass
+
+    @abstractmethod
+    def display_notes(self, notes):
+        pass
+
+class ConsoleUI(UserInterface):
+
+    def display_menu(self):
+        
+        print("\nNotebook Menu:") # Підтримувані команди.
+        print("add = Add Note(Додати нот)")
+        print("edit = Edit Note(Редагувати вміст)")
+        print("delete = Delete Note(Видалити)")
+        print("tag = Add Tag(Додати тег)")
+        print("sort = Sort Notes(Сортування)")
+        print("list = List Notes(Вивести список)")
+        print("search = Search Notes(Пошук)")
+        print("load = Load Notes(Завантаження)")
+        print("save = Save Notes(Зберігання)")
+        print("exit = Exit (and save)")
+        print('=' * 10)
+
+    def get_user_input(self, prompt):
+        return input(prompt)
+
+    def display_message(self, message):
+        print(message)
+
+    def display_notes(self, notes):
+        if not notes:
+            print("No notes available.")
+        else:
+            for i, note in enumerate(notes, start=1):
+                print(f"{i}. Title: {note.title}")
+                print(f"   Content: {note.content}")
+                print(f"   Tags: {', '.join(note.tags)}")
+
+
+
 # Команди, які підтримує бот.
 commands = ["add", "edit", "delete", "tag", "sort", "list", "search", "load", "save", "exit"]
 
@@ -138,21 +190,12 @@ def main():
     filename = "notes.json"
     notebook = Notebook(filename)
     notebook.load_notes()
+    ui = ConsoleUI()  # Створюємо об'єкт консольного інтерфейсу
 
     while True:
-           
-        print("\nNotebook Menu:") # Підтримувані команди.
-        print("add = Add Note(Додати нот)")
-        print("edit = Edit Note(Редагувати вміст)")
-        print("delete = Delete Note(Видалити)")
-        print("tag = Add Tag(Додати тег)")
-        print("sort = Sort Notes(Сортування)")
-        print("list = List Notes(Вивести список)")
-        print("search = Search Notes(Пошук)")
-        print("load = Load Notes(Завантаження)")
-        print("save = Save Notes(Зберігання)")
-        print("exit = Exit (and save)")
-        print('=' * 10)
+
+        ui.display_menu()
+        '''user_input = ui.get_user_input("Enter a command: ")'''
       
         user_input = get_command_from_user()
 
