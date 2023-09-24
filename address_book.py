@@ -2,10 +2,12 @@ from collections import UserDict
 from datetime import datetime, timedelta
 from prompt_toolkit import prompt
 from prompt_toolkit.completion import WordCompleter
+from abc import ABC, abstractmethod
 import json
 import re
 
 is_finished = False
+
 
 class TerribleException(Exception):
     pass
@@ -52,6 +54,40 @@ def command_phone_operations_check_decorator(func):
 
 
 # Classes
+class UserInterface(ABC):
+
+    @abstractmethod
+    def show_contacts(self, contacts):
+        pass
+
+    @abstractmethod
+    def show_notes(self, notes):
+        pass
+
+    @abstractmethod
+    def show_commands(self, commands):
+        pass
+
+    @abstractmethod
+    def get_user_input(self):
+        pass
+
+# Клас для консольного інтерфейсу
+class ConsoleUserInterface(UserInterface):
+
+    def show_contacts(self, contacts):
+        # Логіка для виведення контактів на консоль
+        print("Список контактів:")
+        for contact in contacts:
+            print(f"Ім'я: {contact['name']}, Телефон: {contact['phone']}, Email: {contact['email']}")
+
+    def show_commands(self, commands):
+        # Логіка для виведення доступних команд на консоль
+
+    def get_user_input(self):
+        # Логіка для отримання вводу від користувача з консолі
+
+
 class AddressBook(UserDict):
     N_LIMIT = 2
 
@@ -842,10 +878,11 @@ def get_command_from_user():
     return prompt("Enter a command: ", completer=command_completer)
 
 # main
-def main():
+def main(user_interface):
 
     global is_finished
     adr_book = AddressBook()
+    user_interface.show_commands(command_description)
 
     print('*' * 10)
     hello()
@@ -853,8 +890,13 @@ def main():
     help()
 
     while True:
+        user_input = user_interface.get_user_input()
+        line_list = deconstruct_command(user_input)
+        current_command = line_list[0].casefold()
+        perform_command(current_command, adr_book, line_list)
+        user_interface.show_contacts(adr_book.data)
 
-        user_input = get_command_from_user()
+        """user_input = get_command_from_user()
         current_command = user_input.casefold()
         if current_command in command_list:
             perform_command(current_command, adr_book, [])
@@ -866,12 +908,18 @@ def main():
         input_line = input('Put your request here: ')
         line_list = deconstruct_command(input_line)
         current_command = line_list[0].casefold()
-        perform_command(current_command, adr_book, line_list)
+        perform_command(current_command, adr_book, line_list)"""
 
         # checker to return to jason.py
         if is_finished:
             is_finished = False
             break
+
+# Створення об'єкта для консольного інтерфейсу
+console_ui = ConsoleUserInterface()
+
+# Запуск основної функції з використанням консольного інтерфейсу
+main(console_ui)
 
 
 # Execute
