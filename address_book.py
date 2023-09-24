@@ -61,10 +61,6 @@ class UserInterface(ABC):
         pass
 
     @abstractmethod
-    def show_notes(self, notes):
-        pass
-
-    @abstractmethod
     def show_commands(self, commands):
         pass
 
@@ -83,16 +79,21 @@ class ConsoleUserInterface(UserInterface):
 
     def show_commands(self, commands):
         # Логіка для виведення доступних команд на консоль
+        print("Доступні команди:")
+        for command in commands:
+            print(command)
 
     def get_user_input(self):
         # Логіка для отримання вводу від користувача з консолі
+        user_input = input("Введіть команду: ")
+        return user_input
 
 
 class AddressBook(UserDict):
     N_LIMIT = 2
 
-    def __init__(self):
-
+    def __init__(self, user_interface):
+        self.user_interface = user_interface
         super().__init__()
         self.count = 0
         self.call_List = list(self.data.keys())
@@ -917,9 +918,12 @@ def main(user_interface):
 
 # Створення об'єкта для консольного інтерфейсу
 console_ui = ConsoleUserInterface()
+address_book = AddressBook(console_ui)
+
 
 # Запуск основної функції з використанням консольного інтерфейсу
 main(console_ui)
+
 
 
 # Execute
