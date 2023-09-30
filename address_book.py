@@ -65,15 +65,15 @@ class UserInterface(ABC):
        pass
 
     @abstractmethod
-    def display_message(self, message):
-       pass
+    def display_error(self, message):
+        pass
 
     @abstractmethod
     def display_contacts(self, contacts):
        pass
 
 # Клас для консольного інтерфейсу
-class ConsoleUI(UserInterface):
+class ConsoleUserInterface(UserInterface):
 
     def display_contacts(self, contacts):
         # Логіка для виведення контактів на консоль
@@ -82,9 +82,9 @@ class ConsoleUI(UserInterface):
             print(f"Ім'я: {contact['name']}, Телефон: {contact['phone']}, Email: {contact['email']}")
 
 
-    def display_message(self, message):
+    def display_error(self, message):
         # Логіка для виведення повідомлення на консоль
-        print(message)
+        print("Error:", message)
 
 
     def display_menu(self, commands):
@@ -197,8 +197,8 @@ class AddressBook(UserDict):
         return
 
 # Створення об'єкта для консольного інтерфейсу
-console_ui = ConsoleUI()
-address_book = AddressBook(console_ui)
+user_interface = ConsoleUserInterface()
+address_book = AddressBook(user_interface)
 
 class Record:
 
@@ -336,8 +336,9 @@ class Birthday(Field):
 """Class Name наслідується від Field, приймає ім'я формату str і повертає його."""
 class Name(Field):
 
-    def __init__(self, value):
+    def __init__(self, value,  name):
         self._value = value
+        self.name = name
 
     def __repr__(self) -> str:
         return f'{self._value}'
@@ -895,9 +896,10 @@ def get_command_from_user():
 # main
 def main(user_interface):
 
+    user_interface = ConsoleUserInterface()
     global is_finished
     adr_book = AddressBook()
-    user_interface.show_commands(command_description)
+    user_interface.display_menu(command_description)
 
     print('*' * 10)
     hello()
@@ -934,7 +936,7 @@ def main(user_interface):
 
 
 # Запуск основної функції з використанням консольного інтерфейсу
-main(console_ui)
+main(user_interface)
 
 
 
