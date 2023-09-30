@@ -54,231 +54,10 @@ def command_phone_operations_check_decorator(func):
 
 
 # Classes
-class UserInterface(ABC):
 
-    @abstractmethod
-    def display_menu(self):
-        pass
-
-    @abstractmethod
-    def get_user_input(self):
-       pass
-
-    @abstractmethod
-    def display_error(self, message):
-        pass
-
-    @abstractmethod
-    def display_contacts(self, contacts):
-       pass
-
-# Клас для консольного інтерфейсу
-class ConsoleUserInterface(UserInterface):
-
-    @abstractmethod
-    def display_contacts(self, contacts):
-        # Логіка для виведення контактів на консоль
-        print("Список контактів:")
-        for contact in contacts:
-            print(f"Ім'я: {contact['name']}, Телефон: {contact['phone']}, Email: {contact['email']}")
-
-
-    @abstractmethod
-    def display_error(self, message):
-        # Логіка для виведення повідомлення на консоль
-        print("Error:", message)
-
-
-    @abstractmethod
-    def display_menu(self, commands):
-        # Логіка для виведення меню на консоль
-        print("Меню:")
-        for command in commands:
-            print(command)
-
-    @abstractmethod
-    def get_user_input(self):
-        # Логіка для отримання вводу від користувача з консолі
-        user_input = input("Введіть команду: ")
-        return user_input
-
-
-class AddressBook(UserDict):
-    N_LIMIT = 2
     
 
-    def __init__(self, user_interface):
-        self.user_interface = user_interface
-        super().__init__()
-        self.count = 0
-        self.call_List = list(self.data.keys())
 
-        try:
-
-            with open('save.json') as reader:
-
-                try:
-                    file_data = json.load(reader)
-
-                    for item in file_data:
-                        name = Name(item['name'])
-                        random_var = item['Phone number']
-                        row_email = Email(item['email'])
-                        row_address = Address(item['address'])
-                        record = Record(name,
-                                        random_var[0], row_email, row_address)
-                        iter = 1
-
-                        while iter < len(random_var):
-                            record.add_phone(
-                                random_var[iter])
-                            iter += 1
-
-                        if item['Date of birth'] == '':
-                            record.birthday = ''
-
-                        else:
-                            record.set_birthday(item['Date of birth'])
-
-                        self.data[item['name']] = record
-
-                except json.decoder.JSONDecodeError:
-                    file_data = []
-        
-        except FileNotFoundError:
-            with open('save.json', 'w'):
-                pass
-
-                
-    def add_record(self, record, *_):
-        self.data.update({record.name.value: record})
-
-    def delete_record(self, contact_name):
-        if str(contact_name) in self.data:
-            del self.data[str(contact_name)]
-            return None
-
-    def close_record_data(self):
-
-        file_data = []
-        
-        for record in self.data.values():
-            write_dict = {}
-            write_dict["name"] = record.name.value
-            write_dict["Phone number"] = [str(ph) for ph in record.phones]
-            write_dict["Date of birth"] = record.birthday.value.strftime(
-                "%d %B %Y") if record.birthday else ''
-            write_dict["email"] = str(
-                record.email) if record.email else ''
-            write_dict["address"] = str(
-                record.address) if record.address else ''
-            file_data.append(write_dict)
-
-        with open('save.json', 'w') as writer:
-            json.dump(file_data, writer, indent=4)
-
-    def iterator(self, n):
-        counter = 0
-
-        if n > len(self.data):
-            n = len(self.data)
-            print(
-                f'Seems like there is only {len(self.data)} items in the book!')
-            counter = len(self.data) + 1
-
-        for key, value in self.data.items():
-            recorded_phones = ''
-            recorded_phones = ', '.join([str(ph) for ph in value.phones])
-            print(f"{key}| Phones: {recorded_phones} | BDay: {value.birthday} | Email: {value.email} | Address: {value.address}")
-            counter += 1
-
-            if counter == n:
-                counter = 0
-                print('*' * 10)
-                yield
-
-        print('This was the end of the address book!')
-        return
-
-# Створення об'єкта для консольного інтерфейсу
-user_interface = ConsoleUserInterface()
-address_book = AddressBook(user_interface)
-
-class Record:
-
-    def __init__(self, name, phone, email_value=None, address_value=None):
-        self.name = name
-        self.phones = []
-        self.phones.append(phone)
-        self.email = None
-        self.address = None
-
-        if email_value:
-            self.email = Email('')
-            self.email = email_value  # add email if not empty
-
-        if address_value:
-            self.address = Address('')
-            self.address = address_value
-
-        self.birthday = ''
-
-    def __repr__(self):
-        return f"{self.name}; {self.phones}; {self.birthday if self.birthday else ''}; {self.email if self.email else ''}; {self.address if self.address else ''}"
-
-    def add_phone(self, phone):
-        new_phone = Phone('')
-        new_phone.value = phone
-        if new_phone.value not in [ph for ph in self.phones]:
-            self.phones.append(new_phone)
-            print(
-                f'{new_phone} record was successfully added for {self.name.value}')
-        else:
-            print(
-                f'{new_phone} is already actually recorded in {self.name.value}')
-
-    def edit_phone(self, old_phone):
-
-        new_phone_value = ''
-
-        for phone in self.phones:
-
-            if phone == Phone.convert_phone_number(old_phone):
-                new_phone_value = input('Please input the new phone number: ')
-                # Phone.convert_phone_number(new_phone_value)
-                phone = new_phone_value
-                break
-
-        return new_phone_value
-
-    def delete_phone(self, phone):
-
-        for index, record in enumerate(self.phones, 0):
-            if record == Phone.convert_phone_number(phone):
-                self.phones.pop(index)
-                print(f'{phone} was successfully deleted for {self.name.value}')
-                return
-
-        print('No such phone record!')
-
-    def _days_to_birthday(self):
-
-        if self.birthday == '':
-            print(f'BDay record is not set for {self.name.value}!')
-            return
-
-        days_left = self.birthday._days_to_birthday()
-        print(
-            f'{self.name.value}\'s birthday will be roughly in {days_left} days! ({self.birthday.value.strftime("%d %B %Y")})')
-
-    def set_birthday(self, date_val):
-        self.birthday = Birthday('')
-        self.birthday.value = date_val
-        print(f'{self.birthday} BDay record was added for {self.name.value}!')
-
-    def set_email(self, email_val):
-        self.email.value = email_val
-        print(f'{self.email} email record was added for {self.name.value}!')
 
 
 """Class Field виступає головним класом від якого наслідуються інші класи, такі як: Birthday, Name, Phone, Email, 
@@ -339,19 +118,26 @@ class Birthday(Field):
 
 """Class Name наслідується від Field, приймає ім'я формату str і повертає його."""
 class Name(Field):
+    def __init__(self, value):
+        self._value = value
 
-    def __init__(self, value,  name):
+    def __repr__(self) -> str:
+        return f'{self._value}'
+
+    """def __init__(self, value,):
+        
         self._value = value
         self.name = name
 
     def __repr__(self) -> str:
-        return f'{self._value}'
+        return f'{self._value}'"""
 
 """Class Phone наслідується від Field, приймає номер телефону формату str, проводить його валідацію на коректність 
 введення, конвертує його до формату +380999999999 та повертає у новому вигляді."""
 class Phone(Field):
 
     def __init__(self, value):
+        
         self.__value = value
 
     def __repr__(self) -> str:
@@ -450,6 +236,273 @@ class Address(Field):
     @value.setter
     def value(self, new_value):
         self.__value = new_value
+
+
+class Record:
+
+    def __init__(self, name, phone, email_value=None, address_value=None):
+        self.name = Name(name)
+        self.phones = [Phone(phone)]
+        self.email = Email('') if email_value else None
+        self.address = Address('') if address_value else None
+        """self.email = None
+        self.address = None"""
+        self.birthday = ''
+
+        """if email_value:
+            self.email = Email('')
+            self.email = email_value  # add email if not empty
+
+        if address_value:
+            self.address = Address('')
+            self.address = address_value"""
+
+        
+
+    def __repr__(self):
+        return f"{self.name}; {self.phones}; {self.birthday if self.birthday else ''}; {self.email if self.email else ''}; {self.address if self.address else ''}"
+
+    def add_phone(self, phone):
+        new_phone = Phone('')
+        new_phone.value = phone
+        if new_phone.value not in [ph for ph in self.phones]:
+            self.phones.append(new_phone)
+            print(
+                f'{new_phone} record was successfully added for {self.name.value}')
+        else:
+            print(
+                f'{new_phone} is already actually recorded in {self.name.value}')
+
+    def edit_phone(self, old_phone):
+
+        new_phone_value = ''
+
+        for phone in self.phones:
+
+            if phone == Phone.convert_phone_number(old_phone):
+                new_phone_value = input('Please input the new phone number: ')
+                # Phone.convert_phone_number(new_phone_value)
+                phone = new_phone_value
+                break
+
+        return new_phone_value
+
+    def delete_phone(self, phone):
+
+        for index, record in enumerate(self.phones, 0):
+            if record == Phone.convert_phone_number(phone):
+                self.phones.pop(index)
+                print(f'{phone} was successfully deleted for {self.name.value}')
+                return
+
+        print('No such phone record!')
+
+    def _days_to_birthday(self):
+
+        if self.birthday == '':
+            print(f'BDay record is not set for {self.name.value}!')
+            return
+
+        days_left = self.birthday._days_to_birthday()
+        print(
+            f'{self.name.value}\'s birthday will be roughly in {days_left} days! ({self.birthday.value.strftime("%d %B %Y")})')
+
+    def set_birthday(self, date_val):
+        self.birthday = Birthday('')
+        self.birthday.value = date_val
+        print(f'{self.birthday} BDay record was added for {self.name.value}!')
+
+    def set_email(self, email_val):
+        self.email.value = email_val
+        print(f'{self.email} email record was added for {self.name.value}!')
+
+
+
+
+class AddressBook(UserDict):
+    N_LIMIT = 2
+    
+
+    def __init__(self, user_interface):
+        self.user_interface = user_interface
+        self.data = {}
+        super().__init__()
+        self.count = 0
+        self.call_List = list(self.data.keys())
+
+        try:
+
+            with open('save.json') as reader:
+
+                try:
+                    file_data = json.load(reader)
+
+                    for item in file_data:
+                        name = Name(item['name'])
+                        random_var = item['Phone number']
+                        row_email = Email(item['email'])
+                        row_address = Address(item['address'])
+                        record = Record(name, random_var[0], row_email, row_address)
+                        iter = 1
+
+                        while iter < len(random_var):
+                            record.add_phone(random_var[iter])
+                            iter += 1
+
+                        if item['Date of birth'] == '':
+                            record.birthday = ''
+                        else:
+                            record.set_birthday(item['Date of birth'])
+
+                        self.data[item['name']] = record
+
+                except json.decoder.JSONDecodeError:
+                    file_data = []
+        
+        except FileNotFoundError:
+            with open('save.json', 'w'):
+                pass
+
+                
+    def add_record(self, record, *_):
+        self.data.update({record.name.value: record})
+
+    def delete_record(self, contact_name):
+        if str(contact_name) in self.data:
+            del self.data[str(contact_name)]
+            return None
+
+    def close_record_data(self):
+
+        file_data = []
+        
+        for record in self.data.values():
+            write_dict = {}
+            write_dict["name"] = record.name.value
+            write_dict["Phone number"] = [str(ph) for ph in record.phones]
+            write_dict["Date of birth"] = record.birthday.value.strftime("%d %B %Y") if record.birthday else ''
+            write_dict["email"] = str(record.email) if record.email else ''
+            write_dict["address"] = str(record.address) if record.address else ''
+            file_data.append(write_dict)
+
+        with open('save.json', 'w') as writer:
+            json.dump(file_data, writer, indent=4)
+
+    def iterator(self, n):
+        counter = 0
+
+        if n > len(self.data):
+            n = len(self.data)
+            print(f'Seems like there is only {len(self.data)} items in the book!')
+            counter = len(self.data) + 1
+
+        for key, value in self.data.items():
+            recorded_phones = ', '.join([str(ph) for ph in value.phones])
+            print(f"{key}| Phones: {recorded_phones} | BDay: {value.birthday} | Email: {value.email} | Address: {value.address}")
+            counter += 1
+
+            if counter == n:
+                counter = 0
+                print('*' * 10)
+                yield
+
+        print('This was the end of the address book!')
+        return
+    
+
+class UserInterface(ABC):
+
+    @abstractmethod
+    def show_contacts(self, contacts):
+        pass
+
+    @abstractmethod
+    def show_commands(self, commands):
+        pass
+
+    @abstractmethod
+    def get_user_input(self):
+        pass
+
+# Клас для консольного інтерфейсу
+class ConsoleUserInterface(UserInterface):
+
+    def show_contacts(self, contacts):
+        # Логіка для виведення контактів на консоль
+        print("Список контактів:")
+        for contact_name, contact in contacts.items():
+            if 'name' in contact and 'phones' in contact and 'email' in contact:
+                print(f"Ім'я: {contact['name'].value}, Телефон: {contact['phones'][0].value}, Email: {contact['email'].value}")
+            else:
+                print("Некоректний формат контакту")
+
+                
+    def show_commands(self, commands):
+        # Логіка для виведення доступних команд на консоль
+        print("Доступні команди:")
+        for command in commands:
+            print(command)
+
+    def get_user_input(self):
+        # Логіка для отримання вводу від користувача з консолі
+        user_input = input("Введіть команду: ")
+        return user_input
+    
+
+"""class UserInterface(ABC):
+
+    @abstractmethod
+    def show_menu(self):
+        pass
+
+    @abstractmethod
+    def get_user_input(self):
+       pass
+
+    @abstractmethod
+    def show_error(self, message):
+        pass
+
+    @abstractmethod
+    def show_contacts(self, contacts):
+       pass
+
+# Клас для консольного інтерфейсу
+class ConsoleUserInterface(UserInterface):
+
+    
+    def show_contacts(self, contacts):
+        # Логіка для виведення контактів на консоль
+        print("Список контактів:")
+        for contact in contacts:
+            print(f"Ім'я: {contact.name.value}, Телефон: {contact.show_phones()}, Email: {contact.email.value}")
+
+
+   
+    def show_error(self, message):
+        # Логіка для виведення повідомлення на консоль
+        print("Error:", message)
+
+
+    
+    def show_menu(self, commands):
+        # Логіка для виведення меню на консоль
+        print("Меню:")
+        for command in commands:
+            print(command)
+
+   
+    def get_user_input(self):
+        # Логіка для отримання вводу від користувача з консолі
+        user_input = input("Введіть команду: ")
+        return user_input"""
+
+# Створення об'єкта для консольного інтерфейсу
+"""user_interface = ConsoleUserInterface()
+address_book = AddressBook(user_interface)"""
+
+user_interface = ConsoleUserInterface()
+adr_book = AddressBook(user_interface)
 
 
 # Deconstructor that allows using commands with any number or keywords and with any number or passed parameters
@@ -902,13 +955,13 @@ def main(user_interface):
 
     user_interface = ConsoleUserInterface()
     global is_finished
-    adr_book = AddressBook()
-    user_interface.display_menu(command_description)
+    adr_book = AddressBook(user_interface)
+    user_interface.show_contacts(command_description)
 
     print('*' * 10)
     hello()
-    print('*' * 10)
-    help()
+    """print('*' * 10)
+    help()"""
 
     while True:
         user_input = user_interface.get_user_input()
@@ -940,7 +993,8 @@ def main(user_interface):
 
 
 # Запуск основної функції з використанням консольного інтерфейсу
-main(user_interface)
+"""main(user_interface)"""
+main(ConsoleUserInterface)
 
 
 
