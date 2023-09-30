@@ -75,6 +75,7 @@ class UserInterface(ABC):
 # Клас для консольного інтерфейсу
 class ConsoleUserInterface(UserInterface):
 
+    @abstractmethod
     def display_contacts(self, contacts):
         # Логіка для виведення контактів на консоль
         print("Список контактів:")
@@ -82,17 +83,20 @@ class ConsoleUserInterface(UserInterface):
             print(f"Ім'я: {contact['name']}, Телефон: {contact['phone']}, Email: {contact['email']}")
 
 
+    @abstractmethod
     def display_error(self, message):
         # Логіка для виведення повідомлення на консоль
         print("Error:", message)
 
 
+    @abstractmethod
     def display_menu(self, commands):
         # Логіка для виведення меню на консоль
         print("Меню:")
         for command in commands:
             print(command)
 
+    @abstractmethod
     def get_user_input(self):
         # Логіка для отримання вводу від користувача з консолі
         user_input = input("Введіть команду: ")
