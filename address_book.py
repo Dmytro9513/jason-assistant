@@ -8,7 +8,6 @@ import re
 
 is_finished = False
 
-
 class TerribleException(Exception):
     pass
 
@@ -54,12 +53,6 @@ def command_phone_operations_check_decorator(func):
 
 
 # Classes
-
-    
-
-
-
-
 """Class Field виступає головним класом від якого наслідуються інші класи, такі як: Birthday, Name, Phone, Email, 
 Address. Використовується для приведення типів данних."""
 class Field:
@@ -416,6 +409,10 @@ class UserInterface(ABC):
 # Клас для консольного інтерфейсу
 class ConsoleUserInterface(UserInterface):
 
+    def __init__(self, command_description):
+        super().__init__()
+        self.command_description = command_description
+
     def show_contacts(self, contacts):
         # Логіка для виведення контактів на консоль
         print("Список контактів:")
@@ -426,11 +423,11 @@ class ConsoleUserInterface(UserInterface):
                 print("Некоректний формат контакту  для {contact_name}: {contact}")
 
 
-    def show_commands(self, commands):
+    def show_commands(self):
         # Логіка для виведення доступних команд на консоль
-        print("Доступні команди:")
-        for command in commands:
-            print(command)
+        print("Available commands:")
+        for command, description in command_description.items():
+            print(f'{command} - {description}')
 
     def get_user_input(self):
         # Логіка для отримання вводу від користувача з консолі
@@ -632,6 +629,32 @@ def find(adr_book, line_list):
 
         phones_string = ', '.join([str(ph) for ph in record.phones])
 
+        if str_to_find in record.name.value:
+            is_empty = False
+            print(f'Name: {record.name} | Phones: {phones_string} | Birthday: {record.birthday} | Email: {record.email} | Address: {record.address}')
+            continue
+
+        elif str_to_find in record.email.value:
+            is_empty = False
+            print(f'Name: {record.name} | Phones: {phones_string} | Birthday: {record.birthday} | Email: {record.email} | Address: {record.address}')
+            continue
+
+        elif str_to_find in record.address.value:
+            is_empty = False
+            print(f'Name: {record.name} | Phones: {phones_string} | Birthday: {record.birthday} | Email: {record.email} | Address: {record.address}')
+            continue
+
+        for phone in record.phones:
+
+            if str_to_find in phone:
+                is_empty = False
+                print(f'Name: {record.name} | Phones: {phones_string} | Birthday: {record.birthday} | Email: {record.email} | Address: {record.address}')
+                break
+
+    """for record in adr_book.data.values():
+
+        phones_string = ', '.join([str(ph) for ph in record.phones])
+
         if record.name.value.find(str_to_find) != -1:
             is_empty = False
             print(f'Name: {record.name} | Phones: {phones_string} | Birthday: {record.birthday} | Email: {record.email} | Address: {record.address}')
@@ -652,7 +675,7 @@ def find(adr_book, line_list):
             if phone.find(str_to_find) != -1:
                 is_empty = False
                 print(f'Name: {record.name} | Phones: {phones_string} | Birthday: {record.birthday} | Email: {record.email} | Address: {record.address}')
-                break
+                break"""
 
     if is_empty:
         print('Nothing!')
@@ -886,23 +909,21 @@ def get_command_from_user():
 
 # main
 def main(user_interface):
-
-    user_interface = ConsoleUserInterface()
     global is_finished
     adr_book = AddressBook(user_interface)
-    user_interface.show_contacts(command_description)
-
-    """print('*' * 10)
-    hello()
-    print('*' * 10)
-    help()"""
+    user_interface.show_commands(command_description)
 
     while True:
         user_input = user_interface.get_user_input()
         line_list = deconstruct_command(user_input)
         current_command = line_list[0].casefold()
+        if current_command not in command_list:
+            print(f'Unknown command: {current_command}. Type "help" for a list of commands.')
+            user_interface.show_commands(command_description)
+            continue
+
         perform_command(current_command, adr_book, line_list)
-        user_interface.show_contacts(adr_book.data)
+        user_interface.show_commands(command_description)
 
         # checker to return to jason.py
         if is_finished:
@@ -912,12 +933,10 @@ def main(user_interface):
 
 
 
-# Запуск основної функції з використанням консольного інтерфейсу
-main(ConsoleUserInterface)
 
 
 
 # Execute
 if __name__ == '__main__':
-
-    main()
+    user_interface = ConsoleUserInterface(command_description)
+    main(user_interface)
