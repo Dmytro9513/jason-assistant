@@ -117,13 +117,6 @@ class Name(Field):
     def __repr__(self) -> str:
         return f'{self._value}'
 
-    """def __init__(self, value,):
-        
-        self._value = value
-        self.name = name
-
-    def __repr__(self) -> str:
-        return f'{self._value}'"""
 
 """Class Phone наслідується від Field, приймає номер телефону формату str, проводить його валідацію на коректність 
 введення, конвертує його до формату +380999999999 та повертає у новому вигляді."""
@@ -423,7 +416,7 @@ class ConsoleUserInterface(UserInterface):
                 print("Некоректний формат контакту  для {contact_name}: {contact}")
 
 
-    def show_commands(self):
+    def show_commands(self, command_description):
         # Логіка для виведення доступних команд на консоль
         print("Available commands:")
         for command, description in command_description.items():
@@ -433,10 +426,31 @@ class ConsoleUserInterface(UserInterface):
         # Логіка для отримання вводу від користувача з консолі
         user_input = input("Введіть команду: ")
         return user_input
-    
+
+command_description = {'not save': 'Закрити адресну книгу без збереження',
+                       'good bye': 'Зберегти зміни та закрити адресну книгу',
+                       'close': 'Зберегти зміни та закрити адресну книгу',
+                       'hello': 'Послухати привітання від мене',
+                       'add': 'Додати новий запис',
+                       'add phone': 'Додати новий телефон до існуючого запису',
+                       'edit phone': 'Редагувати телефон існуючого запису',
+                       'show all': 'Показати всі записи',
+                       'show some': 'Показати деяку кількість записів за один раз',
+                       'delete phone': 'Видалити телефон існуючого запису',
+                       'delete contact': 'Видалити запис повністю',
+                       'set bday': 'Встановити день народження для існуючого запису',
+                       'set email': 'Встановити email для існуючого запису',
+                       'set address': 'Встановити адресу для існуючого запису',
+                       'show bday': 'Показати день народження для існуючого запису',
+                       'show email': 'Показати email для існуючого запису',
+                       'show address': 'Показати адресу для існуючого запису',
+                       'find': 'Знайти запис, який містить...',
+                       'help': 'Показати повний список доступних команд',
+                       'bday in': 'Показати записи, які мають день народження протягом встановленого проміжку днів'}
+
 
 # Створення об'єкта для консольного інтерфейсу
-user_interface = ConsoleUserInterface()
+user_interface = ConsoleUserInterface(command_description)
 adr_book = AddressBook(user_interface)
 
 
@@ -481,7 +495,7 @@ def deconstruct_command(input_line: str) -> list:
 def save(adr_book):
     data = []
 
-    for record in adr_book.data.values():
+    for record in adr_book.data.items():
         record_data = {
             'Name': record.name.value,
             'Phones': [phone.value for phone in record.phones],
@@ -503,7 +517,7 @@ def save(adr_book):
 #Universal command performer/handler
 @command_phone_operations_check_decorator
 def perform_command(command: str, adr_book, *args, **kwargs) -> None:
-    command_list[command](adr_book, *args, **kwargs)
+    command_list[command.casefold()](adr_book, *args, **kwargs)
 
 
 #curry functions
@@ -651,38 +665,12 @@ def find(adr_book, line_list):
                 print(f'Name: {record.name} | Phones: {phones_string} | Birthday: {record.birthday} | Email: {record.email} | Address: {record.address}')
                 break
 
-    """for record in adr_book.data.values():
-
-        phones_string = ', '.join([str(ph) for ph in record.phones])
-
-        if record.name.value.find(str_to_find) != -1:
-            is_empty = False
-            print(f'Name: {record.name} | Phones: {phones_string} | Birthday: {record.birthday} | Email: {record.email} | Address: {record.address}')
-            continue
-
-        elif record.email.value.find(str_to_find) != -1:
-            is_empty = False
-            print(f'Name: {record.name} | Phones: {phones_string} | Birthday: {record.birthday} | Email: {record.email} | Address: {record.address}')
-            continue
-
-        elif record.address.value.find(str_to_find) != -1:
-            is_empty = False
-            print(f'Name: {record.name} | Phones: {phones_string} | Birthday: {record.birthday} | Email: {record.email} | Address: {record.address}')
-            continue
-
-        for phone in record.phones:
-
-            if phone.find(str_to_find) != -1:
-                is_empty = False
-                print(f'Name: {record.name} | Phones: {phones_string} | Birthday: {record.birthday} | Email: {record.email} | Address: {record.address}')
-                break"""
-
     if is_empty:
         print('Nothing!')
 
 
-def finish_session(adr_book, *_) -> None:
-
+def finish_session(adr_book) -> None:
+    print('finish_session called')
     adr_book.close_record_data()
     print('Good bye!')
     global is_finished
@@ -880,7 +868,7 @@ command_list = {'not save': close_without_saving,
                 'bday in': show_bday_in_days}
 
 # command vocab with descriptions
-command_description = {'not save': 'Закрити адресну книгу без збереження',
+"""command_description = {'not save': 'Закрити адресну книгу без збереження',
                        'good bye': 'Зберегти зміни та закрити адресну книгу',
                        'close': 'Зберегти зміни та закрити адресну книгу',
                        'hello': 'Послухати привітання від мене',
@@ -900,7 +888,7 @@ command_description = {'not save': 'Закрити адресну книгу б�
                        'find': 'Знайти запис, який містить...',
                        'help': 'Показати повний список доступних команд',
                        'bday in': 'Показати записи, які мають день народження протягом встановленого проміжку днів'}
-
+"""
 # Створення автозавершення для команд
 command_completer = WordCompleter(list(command_list.keys()), ignore_case=True)
 
@@ -911,29 +899,21 @@ def get_command_from_user():
 def main(user_interface):
     global is_finished
     adr_book = AddressBook(user_interface)
-    user_interface.show_commands(command_description)
 
     while True:
-        user_input = user_interface.get_user_input()
-        line_list = deconstruct_command(user_input)
-        current_command = line_list[0].casefold()
+        current_command = get_command_from_user()
         if current_command not in command_list:
             print(f'Unknown command: {current_command}. Type "help" for a list of commands.')
             user_interface.show_commands(command_description)
             continue
 
-        perform_command(current_command, adr_book, line_list)
-        user_interface.show_commands(command_description)
+        perform_command(current_command, adr_book)
+        #user_interface.show_commands(command_description)
 
         # checker to return to jason.py
         if is_finished:
             is_finished = False
             break
-
-
-
-
-
 
 
 # Execute
