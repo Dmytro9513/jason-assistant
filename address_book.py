@@ -1,27 +1,20 @@
 from collections import UserDict
 from datetime import datetime, timedelta
-from prompt_toolkit import prompt
-from prompt_toolkit.completion import WordCompleter
-from abc import ABC, abstractmethod
 import json
 import re
 
-is_finished = False
-
-
+# Custom exceptions
 class TerribleException(Exception):
     pass
 
-
 class ExcessiveArguments(Exception):
     pass
-
 
 class WrongArgumentFormat(Exception):
     pass
 
 
-# Decorator that catches most of the exceptions
+# Universal decorator that catches general exceptions
 def command_phone_operations_check_decorator(func):
     def inner(*args, **kwargs) -> None:
 
@@ -54,87 +47,13 @@ def command_phone_operations_check_decorator(func):
 
 
 # Classes
-class UserInterface(ABC):
-
-    @abstractmethod
-    def show_contacts(self, contacts):
-        pass
-
-    @abstractmethod
-    def show_commands(self, commands):
-        pass
-
-    @abstractmethod
-    def get_user_input(self):
-        pass
-
-# Клас для консольного інтерфейсу
-class ConsoleUserInterface(UserInterface):
-
-    def show_contacts(self, contacts):
-        # Логіка для виведення контактів на консоль
-        print("Список контактів:")
-        for contact in contacts:
-            print(f"Ім'я: {contact['name']}, Телефон: {contact['phone']}, Email: {contact['email']}")
-
-    def show_commands(self, commands):
-        # Логіка для виведення доступних команд на консоль
-        print("Доступні команди:")
-        for command in commands:
-            print(command)
-
-    def get_user_input(self):
-        # Логіка для отримання вводу від користувача з консолі
-        user_input = input("Введіть команду: ")
-        return user_input
-
-
 class AddressBook(UserDict):
-    N_LIMIT = 2
 
-    def __init__(self, user_interface):
-        self.user_interface = user_interface
+    def __init__(self):
         super().__init__()
-        self.count = 0
-        self.call_List = list(self.data.keys())
-
-        try:
-
-            with open('save.json') as reader:
-
-                try:
-                    file_data = json.load(reader)
-
-                    for item in file_data:
-                        name = Name(item['name'])
-                        random_var = item['Phone number']
-                        row_email = Email(item['email'])
-                        row_address = Address(item['address'])
-                        record = Record(name,
-                                        random_var[0], row_email, row_address)
-                        iter = 1
-
-                        while iter < len(random_var):
-                            record.add_phone(
-                                random_var[iter])
-                            iter += 1
-
-                        if item['Date of birth'] == '':
-                            record.birthday = ''
-
-                        else:
-                            record.set_birthday(item['Date of birth'])
-
-                        self.data[item['name']] = record
-
-                except json.decoder.JSONDecodeError:
-                    file_data = []
+        self.is_finished = False
+        self._load()
         
-        except FileNotFoundError:
-            with open('save.json', 'w'):
-                pass
-
-                
     def add_record(self, record, *_):
         self.data.update({record.name.value: record})
 
@@ -143,8 +62,7 @@ class AddressBook(UserDict):
             del self.data[str(contact_name)]
             return None
 
-    def close_record_data(self):
-
+    def _save(self):
         file_data = []
         
         for record in self.data.values():
@@ -184,6 +102,40 @@ class AddressBook(UserDict):
 
         print('This was the end of the address book!')
         return
+    
+    def _load(self):     
+
+        try:
+            with open('save.json') as reader:
+                try:
+                    file_data = json.load(reader)
+
+                    for item in file_data:
+                        name = Name(item['name'])
+                        row_phones = item['Phone number']
+                        row_email = Email(item['email'])
+                        row_address = Address(item['address'])
+                        record = Record(name,
+                                        Phone(row_phones[0]), row_email, row_address)
+                        
+                        iter = 1
+                        while iter < len(row_phones):
+                            record.add_phone(row_phones[iter])
+                            iter += 1
+
+                        if item['Date of birth'] == '':
+                            record.birthday = ''
+                        else:
+                            record.set_birthday(item['Date of birth'])
+
+                        self.data[item['name']] = record
+
+                except json.decoder.JSONDecodeError:
+                    file_data = []
+        
+        except FileNotFoundError:
+            with open('save.json', 'w'):
+                ...
 
 
 class Record:
@@ -210,7 +162,10 @@ class Record:
 
     def add_phone(self, phone):
         new_phone = Phone('')
-        new_phone.value = phone
+
+        # валидация висит на сеттере Phone
+        new_phone.value = str(phone)
+
         if new_phone.value not in [ph for ph in self.phones]:
             self.phones.append(new_phone)
             print(
@@ -223,13 +178,20 @@ class Record:
 
         new_phone_value = ''
 
-        for phone in self.phones:
+        for index, phone in enumerate(self.phones, 0):
 
-            if phone == Phone.convert_phone_number(old_phone):
+            if phone.value == Phone.convert_phone_number(old_phone):
                 new_phone_value = input('Please input the new phone number: ')
-                # Phone.convert_phone_number(new_phone_value)
-                phone = new_phone_value
-                break
+                new_phone_value = Phone.convert_phone_number(new_phone_value)
+
+                if Phone.valid_phone(new_phone_value): 
+                    self.phones[index] = new_phone_value
+                    break
+
+                else:
+                    print('Number format is not correct! Must contain 10-13 symbols and must match the one of the current '
+                  'formats: +380001112233 or 80001112233 or 0001112233!')
+                    break
 
         return new_phone_value
 
@@ -470,32 +432,9 @@ def deconstruct_command(input_line: str) -> list:
     return new_line_list
 
 
-# save
-def save(adr_book):
-    data = []
-
-    for record in adr_book.data.values():
-        record_data = {
-            'Name': record.name.value,
-            'Phones': [phone.value for phone in record.phones],
-            'Email': record.email.value,
-            'Address': record.address.value,
-            'Birthday': record.birthday.value
-        }
-        data.append(record_data)
-
-    try:
-        with open('save.json', 'w') as json_file:
-            json.dump(data, json_file, indent=4)
-        print('The data is saved in JSON format.')
-
-    except FileNotFoundError:
-        print('Data could not be saved. Check the path to the file.')
-
-
 #Universal command performer/handler
 @command_phone_operations_check_decorator
-def perform_command(command: str, adr_book, *args, **kwargs) -> None:
+def perform_command(command: str, adr_book, *args, **kwargs) -> None | bool:
     command_list[command](adr_book, *args, **kwargs)
 
 
@@ -550,24 +489,19 @@ def edit_phone(adr_book, line_list) -> None:
 
     try:
         record_name = line_list[1]
-        record = adr_book.data.get(record_name)
-        if not record:
-            print(f'Cannot find name {record_name} in the list!')
-            return
+        adr_book.data[record_name]
+    except KeyError:
+        print(f'Cannot find name {record_name} in the list!')
+        return
 
-        old_phone = line_list[2]
-        new_phone = adr_book.data[record_name].edit_phone(old_phone)
+    old_phone = line_list[2]
+    new_phone = adr_book.data[record_name].edit_phone(old_phone)
 
-        if new_phone:
-            if Phone.valid_phone(new_phone):
-                print(f'{old_phone} was successfully changed to {new_phone} for {record_name}')
-            else:
-                print('Number format is not correct! Must contain 10-13 symbols and must match the one of the current '
-                    'formats: +380001112233 or 80001112233 or 0001112233!')
-        else:
-            print(f'{old_phone} phone number was not found for {record_name}!')
-    except ExcessiveArguments:
-        print('Excessive arguments!')
+    if new_phone:
+        print(f'{old_phone} was successfully changed to {new_phone} for {record_name}')
+    else:
+        print(f'{old_phone} phone number was not found for {record_name}!')
+
 
 @command_phone_operations_check_decorator
 def delete_phone(adr_book, line_list) -> None:
@@ -578,17 +512,12 @@ def delete_phone(adr_book, line_list) -> None:
     phone = line_list[2]
 
     try:
-        record = adr_book.data.get(record_name)
-        if not record:
-            print(f'Cannot find name {record_name} in the list!')
-            return
+        adr_book.data[record_name]
+    except KeyError:
+        print(f'Cannot find name {record_name} in the list!')
+        return
 
-        if record.delete_phone(phone):
-            print(f'{phone} was successfully deleted for {record_name}')
-        else:
-            print(f'{phone} phone number was not found for {record_name}')
-    except ExcessiveArguments:
-        print('Excessive arguments!')
+    adr_book.data[record_name].delete_phone(phone)
 
 
 @command_phone_operations_check_decorator
@@ -603,10 +532,10 @@ def delete_record(adr_book, line_list):
         print("No such phone record!")
 
 
-def close_without_saving(*_):
+def close_without_saving(adr_book, *_):
+    adr_book.is_finished = True
     print('Will NOT save! BB!')
-    global is_finished
-    is_finished = True
+
 
 
 @command_phone_operations_check_decorator
@@ -642,7 +571,7 @@ def find(adr_book, line_list):
 
         for phone in record.phones:
 
-            if phone.find(str_to_find) != -1:
+            if phone.value.find(str_to_find) != -1:
                 is_empty = False
                 print(
                     f'Name: {record.name} | Phones: {phones_string} | Birthday: {record.birthday} | Email: {record.email} | Address: {record.address}')
@@ -652,12 +581,12 @@ def find(adr_book, line_list):
         print('Nothing!')
 
 
-def finish_session(adr_book, *_) -> None:
+def finish_session(adr_book, *_) -> bool:
 
-    adr_book.close_record_data()
+    adr_book._save()
+    adr_book.is_finished = True
     print('Good bye!')
-    global is_finished
-    is_finished = True
+
 
 
 def hello(*_) -> None:
@@ -872,18 +801,9 @@ command_description = {'not save': 'Close adress book without saving',
                        'help': 'Show full list of available commands',
                        'bday in': 'Show records that have BDay in set timeframe of days'}
 
-# Створення автозавершення для команд
-command_completer = WordCompleter(list(command_list.keys()), ignore_case=True)
-
-def get_command_from_user():
-    return prompt("Enter a command: ", completer=command_completer)
-
 # main
-def main(user_interface):
-
-    global is_finished
+def main():
     adr_book = AddressBook()
-    user_interface.show_commands(command_description)
 
     print('*' * 10)
     hello()
@@ -891,39 +811,17 @@ def main(user_interface):
     help()
 
     while True:
-        user_input = user_interface.get_user_input()
-        line_list = deconstruct_command(user_input)
-        current_command = line_list[0].casefold()
-        perform_command(current_command, adr_book, line_list)
-        user_interface.show_contacts(adr_book.data)
-
-        """user_input = get_command_from_user()
-        current_command = user_input.casefold()
-        if current_command in command_list:
-            perform_command(current_command, adr_book, [])
-        else:
-            print("Unknown command. Type 'help' for a list of available commands.")
 
         print('*' * 10)
 
         input_line = input('Put your request here: ')
         line_list = deconstruct_command(input_line)
         current_command = line_list[0].casefold()
-        perform_command(current_command, adr_book, line_list)"""
+        perform_command(current_command, adr_book, line_list)
 
-        # checker to return to jason.py
-        if is_finished:
-            is_finished = False
+        # checker to return to jason.py, bcz decorator over 'perform_command' returns None and makes it tricky
+        if adr_book.is_finished:
             break
-
-# Створення об'єкта для консольного інтерфейсу
-console_ui = ConsoleUserInterface()
-address_book = AddressBook(console_ui)
-
-
-# Запуск основної функції з використанням консольного інтерфейсу
-main(console_ui)
-
 
 
 # Execute
