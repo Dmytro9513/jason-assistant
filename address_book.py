@@ -656,7 +656,8 @@ def show_all_items(adr_book, *_) -> None:
             print(f'Your list for {record} is empty!')
             continue
 
-        print(f'Phones for {record} (email = "{adr_book.data[record].email.value}", address = "{adr_book.data[record].address.value}", BDay = "{adr_book.data[record].birthday}"):')
+        print(f'Phones for {record} (email = "{adr_book.data[record].email}", address = "{adr_book.data[record].address}", BDay = "{adr_book.data[record].birthday}"):')
+
         for id, phone in enumerate(adr_book.data[record].phones, 1):
             print(f'{id}) - {phone}')
 
